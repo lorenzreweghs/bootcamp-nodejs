@@ -1,25 +1,17 @@
-import express, { Request, Response } from 'express';
-import { collections } from './services/database.service';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import 'dotenv/config';
+import express from 'express';
+
+import authRouter from './routes/auth';
+import userRouter from './routes/user';
 
 const PORT = process.env.PORT || 3000;
 
 const app = express();
 
-const userRouter = express.Router();
-
 app.use(express.json());
 
-userRouter.get('/', async (_req: Request, res: Response) => {
-  try {
-    // const users = (await collections.users?.find({}).toArray()) as User[];
-    const users = await collections.users?.find({}).toArray();
-
-    res.status(200).send(users);
-  } catch (error: any) {
-    res.status(500).send(error.message);
-  }
-});
-
+app.use('/api', authRouter);
 app.use('/api', userRouter);
 
 app.listen(PORT, () => {
