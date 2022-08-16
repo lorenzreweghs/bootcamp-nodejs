@@ -1,0 +1,39 @@
+{
+  "name": "ts-node-jest",
+  "version": "1.0.0",
+  "description": "A typescript node starter",
+  "main": "src/main.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc --project tsconfig.prod.json --sourceMap",
+    "clean": "rimraf coverage dist",
+    "lint": "concurrently -n tsc,lint, -c \"cyan.bold,green.bold\" \"tsc --noEmit --pretty\" \"eslint --ext .js,.ts ./\"",
+    "start": "tsx watch src/main.ts",
+    "test": "jest",
+    "cleanup": "rimraf dist"
+  },
+  "devDependencies": {
+    "@tsconfig/node16": "^1.0.3",
+    "@types/jest": "^28.1.6",
+    "@types/node": "^16.11.45",
+    "@typescript-eslint/eslint-plugin": "^5.30.7",
+    "@typescript-eslint/parser": "^5.30.7",
+    "concurrently": "^7.3.0",
+    "dotenv": "^16.0.1",
+    "eslint": "^8.20.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jest": "^26.6.0",
+    "jest": "^28.1.3",
+    "jest-watch-typeahead": "^2.0.0",
+    "nodemon": "^2.0.19",
+    "prettier": "^2.7.1",
+    "prettier-plugin-organize-imports": "^3.0.0",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^28.0.7",
+    "ts-node": "^10.9.1",
+    "tsx": "^3.8.0",
+    "typescript": "^4.7.4"
+  }
+}
