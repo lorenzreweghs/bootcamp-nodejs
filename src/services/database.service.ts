@@ -11,7 +11,9 @@ export async function connectToDatabase() {
 
   const db: mongoDB.Db = client.db(process.env.DATABASE);
 
-  const userCollection: mongoDB.Collection = db.collection(process.env.USER_COLLECTION!);
+  const userCollection: mongoDB.Collection = db.collection(
+    process.env.NODE_ENV === 'test' ? process.env.USER_TEST_COLLECTION! : process.env.USER_COLLECTION!,
+  );
 
   collections.users = userCollection;
 
