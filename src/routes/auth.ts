@@ -1,4 +1,5 @@
 /* eslint-disable consistent-return */
+import bcrypt from 'bcrypt';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import 'dotenv/config';
 import express, { Handler } from 'express';
@@ -12,13 +13,29 @@ let refreshTokens: string[] = [];
 const generateAccessToken = (user: { username: string; password: string }) =>
   jwt.sign(user, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: '15m' });
 
-const registerHandler: Handler = async (_req, res) => {
+export const registerHandler: Handler = (_req, res, next) => {
   const { username, password } = _req.body;
 
-  await collections.users?.insertOne({});
+  bcrypt.hash(password, 10, async (err, hashedPassword) => {
+    if (err) return res.sendStatus(500);
+
+    try {
+      const result = await collections.users?.insertOne({
+        username,
+        password: hashedPassword,
+      });
+
+      res.status(201).json({
+        id: result?.insertedId,
+        username,
+      });
+    } catch (error) {
+      res.sendStatus(403);
+    }
+  });
 };
 
-authRouter.post('/register', registerHandler);
+authRouter.post('/register', (_req, res, next) => registerHandler(_req, res, next));
 
 authRouter.post('/login', (_req, res) => {
   const { username, password } = _req.body;
@@ -35,13 +52,13 @@ authRouter.post('/login', (_req, res) => {
 });
 
 authRouter.post('/token', (_req, res) => {
-  const { token } = _req.body;
+  const { refreshToken } = _req.body;
 
-  if (!token) return res.sendStatus(401);
+  if (!refreshToken) return res.sendStatus(401);
 
-  if (!refreshTokens.includes(token)) return res.sendStatus(403);
+  if (!refreshTokens.includes(refreshToken)) return res.sendStatus(403);
 
-  jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!, (err: jwt.VerifyErrors | null, user: any) => {
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!, (err: jwt.VerifyErrors | null, user: any) => {
     if (err) return res.sendStatus(403);
 
     const accessToken = generateAccessToken({
@@ -53,6 +70,10 @@ authRouter.post('/token', (_req, res) => {
 });
 
 authRouter.delete('/logout', (_req, res) => {
+  const { refreshToken } = _req.body;
+
+  if (!refreshToken) return res.sendStatus(401);
+
   refreshTokens = refreshTokens.filter((token) => token !== _req.body.token);
   res.sendStatus(204);
 });
