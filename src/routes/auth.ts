@@ -37,12 +37,20 @@ export const registerHandler: Handler = (_req, res, next) => {
 
 authRouter.post('/register', (_req, res, next) => registerHandler(_req, res, next));
 
-authRouter.post('/login', (_req, res) => {
+authRouter.post('/login', async (_req, res) => {
   const { username, password } = _req.body;
   const user = {
     username,
     password,
   };
+
+  const userDoc = await collections.users?.findOne({ username });
+  if (!userDoc) return res.sendStatus(404);
+
+  bcrypt.compare(password, userDoc.password, (err, result) => {
+    if (err) return res.sendStatus(500);
+    if (!result) return res.sendStatus(403);
+  });
 
   const accessToken = generateAccessToken(user);
   const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET!);
