@@ -1,12 +1,10 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
-import * as dotenv from 'dotenv';
+import 'dotenv/config';
 import * as mongoDB from 'mongodb';
 
 export const collections: { users?: mongoDB.Collection } = {};
 
 export async function connectToDatabase() {
-  dotenv.config();
-
   const client: mongoDB.MongoClient = new mongoDB.MongoClient(process.env.MONGODB_URI!);
 
   await client.connect();
