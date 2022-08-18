@@ -2,7 +2,7 @@
 import bcrypt from 'bcrypt';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import 'dotenv/config';
-import express, { Handler } from 'express';
+import express from 'express';
 import jwt from 'jsonwebtoken';
 import { collections } from '../services/database.service';
 
@@ -12,30 +12,6 @@ let refreshTokens: string[] = [];
 
 const generateAccessToken = (user: { username: string; password: string }) =>
   jwt.sign(user, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: '15m' });
-
-export const registerHandler: Handler = (_req, res, next) => {
-  const { username, password } = _req.body;
-
-  bcrypt.hash(password, 10, async (err, hashedPassword) => {
-    if (err) return res.sendStatus(500);
-
-    try {
-      const result = await collections.users?.insertOne({
-        username,
-        password: hashedPassword,
-      });
-
-      res.status(201).json({
-        id: result?.insertedId,
-        username,
-      });
-    } catch (error) {
-      res.sendStatus(403);
-    }
-  });
-};
-
-authRouter.post('/register', (_req, res, next) => registerHandler(_req, res, next));
 
 authRouter.post('/login', async (_req, res) => {
   const { username, password } = _req.body;
