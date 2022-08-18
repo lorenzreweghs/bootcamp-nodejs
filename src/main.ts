@@ -9,6 +9,6 @@ const PORT = process.env.PORT || 3000;
 const app = createServer();
 
 app.listen(PORT, async () => {
-  await connectToDatabase();
+  await connectToDatabase().connect();
   console.log(`Example app listening on port ${PORT}`);
 });
