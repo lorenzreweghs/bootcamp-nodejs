@@ -32,7 +32,6 @@ userRouter
   .route('/users')
   .get(async (_req, res) => {
     try {
-      // const users = (await collections.users?.find({}).toArray()) as User[];
       const users = await collections.users?.find({}).toArray();
 
       res.status(200).send(users);
@@ -65,20 +64,14 @@ userRouter
       if (err) return res.sendStatus(500);
 
       try {
-        const result = await collections.users?.updateOne(
-          { _id: new ObjectId(id) },
-          {
-            username,
-            password: hashedPassword,
-          },
-        );
+        await collections.users?.updateOne({ _id: new ObjectId(id) }, { $set: { username, password: hashedPassword } });
 
         res.status(200).json({
-          id: result?.upsertedId,
+          id,
           username,
         });
-      } catch (error) {
-        res.sendStatus(403);
+      } catch (error: any) {
+        res.status(403).send(error.message);
       }
     });
   })
@@ -86,11 +79,11 @@ userRouter
     const { id } = _req.params;
 
     try {
-      const result = await collections.users?.deleteOne({ _id: new ObjectId(id) });
+      await collections.users?.deleteOne({ _id: new ObjectId(id) });
 
       res.status(200).send(`User with ID ${id} deleted`);
-    } catch (error) {
-      res.sendStatus(500);
+    } catch (error: any) {
+      res.status(500).send(error.message);
     }
   });
 
