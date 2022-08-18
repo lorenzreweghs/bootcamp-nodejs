@@ -2,7 +2,13 @@
 import 'dotenv/config';
 import * as mongoDB from 'mongodb';
 
-export const collections: { users?: mongoDB.Collection } = {};
+interface ICollections {
+  users?: mongoDB.Collection;
+  products?: mongoDB.Collection;
+  baskets?: mongoDB.Collection;
+}
+
+export const collections: ICollections = {};
 
 export async function connectToDatabase() {
   const client: mongoDB.MongoClient = new mongoDB.MongoClient(process.env.MONGODB_URI!);
@@ -14,10 +20,17 @@ export async function connectToDatabase() {
   const userCollection: mongoDB.Collection = db.collection(
     process.env.NODE_ENV === 'test' ? process.env.USER_TEST_COLLECTION! : process.env.USER_COLLECTION!,
   );
-
   collections.users = userCollection;
 
-  console.log(
-    `Successfully connected to database: ${db.databaseName} and collection: ${userCollection.collectionName}`,
+  const productCollection: mongoDB.Collection = db.collection(
+    process.env.NODE_ENV === 'test' ? process.env.PRODUCT_TEST_COLLECTION! : process.env.PRODUCT_COLLECTION!,
   );
+  collections.products = productCollection;
+
+  const basketCollection: mongoDB.Collection = db.collection(
+    process.env.NODE_ENV === 'test' ? process.env.BASKET_TEST_COLLECTION! : process.env.BASKET_COLLECTION!,
+  );
+  collections.baskets = basketCollection;
+
+  console.log(`Successfully connected to database '${db.databaseName}'`);
 }
