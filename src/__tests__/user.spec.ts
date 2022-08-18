@@ -1,8 +1,7 @@
-import { ObjectId } from 'mongodb';
 import supertest from 'supertest';
 
-import * as AuthHandlers from '../routes/auth';
 import createServer from '../server';
+import { collections, connectToDatabase } from '../services/database.service';
 
 describe('users', () => {
   const app = createServer();
@@ -13,25 +12,27 @@ describe('users', () => {
   };
 
   describe('user registration', () => {
+    beforeAll(async () => {
+      await connectToDatabase().connect();
+      await collections.users?.drop();
+    });
+
+    afterAll(async () => {
+      await connectToDatabase().disconnect();
+    });
+
     describe('given the user signs up with a username and password', () => {
       it('should return statusCode 201 and an object with the ID and username', async () => {
-        const insertedId = new ObjectId();
-        const createUserMock = jest.spyOn(AuthHandlers, 'registerHandler').mockImplementation((_req, res) => {
-          const { username } = _req.body;
-          res.status(201).json({
-            id: insertedId,
-            username,
-          });
-        });
-
-        const { statusCode, body } = await supertest(app).post('/api/register').send(user);
+        const { statusCode, body } = await supertest(app).post('/api/users').send(user);
 
         expect(statusCode).toBe(201);
-        expect(createUserMock).toHaveBeenCalledTimes(1);
         expect(body).toEqual({
-          id: `${insertedId}`,
+          id: expect.any(String),
           username: 'Lorenz',
         });
+
+        const userDoc = await collections.users?.findOne({ username: 'Lorenz' });
+        expect(userDoc).toBeDefined();
       });
     });
 
