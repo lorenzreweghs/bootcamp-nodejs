@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  mongodb:
+    image: mongo:4.4.15
+    volumes:
+      - bootcamp-backend-mongodb:/data/db
+    ports:
+      - 27017:27017
+    restart: unless-stopped
+volumes:
+  bootcamp-backend-mongodb:
+    external: true
