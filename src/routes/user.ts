@@ -3,10 +3,19 @@ import bcrypt from 'bcrypt';
 import express, { Handler } from 'express';
 import { ObjectId } from 'mongodb';
 import { collections } from '../services/database.service';
+import ajv from '../utils/ajv';
+import { BadRequest } from '../utils/httpError';
+import { validateUser } from '../validation/validators';
+import { UserRequestBody } from './resources';
 
 const userRouter = express.Router();
 
+function guardAgainstInvalidUser(body: unknown): asserts body is UserRequestBody {
+  if (!validateUser(body)) throw new BadRequest(ajv.errorsText(validateUser.errors, { dataVar: 'body' }));
+}
+
 export const registerHandler: Handler = (_req, res, next) => {
+  // guardAgainstInvalidUser(_req.body);
   const { username, password } = _req.body;
 
   bcrypt.hash(password, 10, async (err, hashedPassword) => {
