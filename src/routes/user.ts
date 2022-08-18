@@ -1,18 +1,97 @@
-import express, { Request, Response } from 'express';
-import { authenticateToken } from '../middleware/auth';
+/* eslint-disable consistent-return */
+import bcrypt from 'bcrypt';
+import express, { Handler } from 'express';
+import { ObjectId } from 'mongodb';
 import { collections } from '../services/database.service';
 
 const userRouter = express.Router();
 
-userRouter.get('/', authenticateToken, async (_req: Request, res: Response) => {
-  try {
-    // const users = (await collections.users?.find({}).toArray()) as User[];
-    const users = await collections.users?.find({}).toArray();
+export const registerHandler: Handler = (_req, res, next) => {
+  const { username, password } = _req.body;
 
-    res.status(200).send(users);
-  } catch (error: any) {
-    res.status(500).send(error.message);
-  }
-});
+  bcrypt.hash(password, 10, async (err, hashedPassword) => {
+    if (err) return res.sendStatus(500);
+
+    try {
+      const result = await collections.users?.insertOne({
+        username,
+        password: hashedPassword,
+      });
+
+      res.status(201).json({
+        id: result?.insertedId,
+        username,
+      });
+    } catch (error) {
+      res.sendStatus(403);
+    }
+  });
+};
+
+userRouter
+  .route('/users')
+  .get(async (_req, res) => {
+    try {
+      // const users = (await collections.users?.find({}).toArray()) as User[];
+      const users = await collections.users?.find({}).toArray();
+
+      res.status(200).send(users);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  })
+  .post((_req, res, next) => registerHandler(_req, res, next));
+
+userRouter
+  .route('/users/:id')
+  .get(async (_req, res) => {
+    const { id } = _req.params;
+
+    try {
+      const user = await collections.users?.findOne({ _id: new ObjectId(id) });
+
+      if (!user) return res.sendStatus(404);
+
+      res.status(200).send(user);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  })
+  .put(async (_req, res) => {
+    const { id } = _req.params;
+    const { username, password } = _req.body;
+
+    bcrypt.hash(password, 10, async (err, hashedPassword) => {
+      if (err) return res.sendStatus(500);
+
+      try {
+        const result = await collections.users?.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            username,
+            password: hashedPassword,
+          },
+        );
+
+        res.status(200).json({
+          id: result?.upsertedId,
+          username,
+        });
+      } catch (error) {
+        res.sendStatus(403);
+      }
+    });
+  })
+  .delete(async (_req, res) => {
+    const { id } = _req.params;
+
+    try {
+      const result = await collections.users?.deleteOne({ _id: new ObjectId(id) });
+
+      res.status(200).send(`User with ID ${id} deleted`);
+    } catch (error) {
+      res.sendStatus(500);
+    }
+  });
 
 export default userRouter;
