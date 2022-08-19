@@ -6,6 +6,7 @@ interface ICollections {
   users?: mongoDB.Collection;
   products?: mongoDB.Collection;
   baskets?: mongoDB.Collection;
+  tokens?: mongoDB.Collection;
 }
 
 export const collections: ICollections = {};
@@ -33,11 +34,17 @@ export function connectToDatabase() {
     );
     collections.baskets = basketCollection;
 
+    const tokenCollection: mongoDB.Collection = db.collection(
+      process.env.NODE_ENV === 'test' ? process.env.TOKEN_TEST_COLLECTION! : process.env.TOKEN_COLLECTION!,
+    );
+    collections.tokens = tokenCollection;
+
     console.log(`Successfully connected to database '${db.databaseName}'`);
   };
 
   const disconnect = async () => {
     await client.close();
+    console.log('Successfully disconnected');
   };
 
   return {
