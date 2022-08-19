@@ -10,26 +10,32 @@ import { UserRequestBody } from './resources';
 
 const userRouter = express.Router();
 
-function guardAgainstInvalidUser(body: unknown): asserts body is UserRequestBody {
+export function guardAgainstInvalidUser(body: unknown): asserts body is UserRequestBody {
   if (!validateUser(body)) throw new BadRequest(ajv.errorsText(validateUser.errors, { dataVar: 'body' }));
 }
 
 export const registerHandler: Handler = (_req, res, next) => {
-  // guardAgainstInvalidUser(_req.body);
-  const { username, password } = _req.body;
+  guardAgainstInvalidUser(_req.body);
+  const { firstName, lastName, email, password, role } = _req.body;
 
   bcrypt.hash(password, 10, async (err, hashedPassword) => {
     if (err) return res.sendStatus(500);
 
     try {
       const result = await collections.users?.insertOne({
-        username,
+        firstName,
+        lastName,
+        email,
         password: hashedPassword,
+        role,
       });
 
       res.status(201).json({
         id: result?.insertedId,
-        username,
+        firstName,
+        lastName,
+        email,
+        role,
       });
     } catch (error) {
       res.sendStatus(403);
@@ -66,18 +72,25 @@ userRouter
     }
   })
   .put(async (_req, res) => {
+    guardAgainstInvalidUser(_req.body);
     const { id } = _req.params;
-    const { username, password } = _req.body;
+    const { firstName, lastName, email, password, role } = _req.body;
 
     bcrypt.hash(password, 10, async (err, hashedPassword) => {
       if (err) return res.sendStatus(500);
 
       try {
-        await collections.users?.updateOne({ _id: new ObjectId(id) }, { $set: { username, password: hashedPassword } });
+        await collections.users?.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { firstName, lastName, email, password: hashedPassword, role } },
+        );
 
         res.status(200).json({
           id,
-          username,
+          firstName,
+          lastName,
+          email,
+          role,
         });
       } catch (error: any) {
         res.status(403).send(error.message);
