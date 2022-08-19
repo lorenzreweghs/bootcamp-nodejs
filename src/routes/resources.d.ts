@@ -15,4 +15,5 @@ export interface UserRequestBody {
 
 export interface UserResponseBody extends UserRequestBody {
   id: string;
+  password?: string;
 }
