@@ -17,3 +17,9 @@ export interface UserResponseBody extends UserRequestBody {
   id: string;
   password?: string;
 }
+
+export interface TokenBody {
+  id: string;
+  user_id: string;
+  refreshToken: string;
+}
