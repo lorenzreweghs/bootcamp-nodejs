@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import { ObjectId } from 'mongodb';
 import supertest from 'supertest';
 import { generateAccessToken } from '../routes/auth';
+import { guardAgainstInvalidUser } from '../routes/user';
 
 import createServer from '../server';
 import { collections, connectToDatabase } from '../services/database.service';
@@ -79,6 +80,14 @@ describe('users', () => {
 
     describe('given the user sends a PUT request with a valid ID & user', () => {
       it('should return statusCode 200 and the updated user', async () => {
+        const input = {
+          firstName: 'Joe',
+          lastName: 'Biden',
+          email: 'biden.joe@euri.com',
+          password: 'Nedib',
+          role: 'user',
+        };
+
         const { statusCode, body } = await supertest(app)
           .put(`/api/users/${insertedIdJoe}`)
           .set(
@@ -88,21 +97,13 @@ describe('users', () => {
               password: 'Znerol',
             })}`,
           )
-          .send({
-            firstName: 'Joe',
-            lastName: 'Biden',
-            email: 'biden.joe@euri.com',
-            password: 'Nedib',
-            role: 'user',
-          });
+          .send(input);
 
         expect(statusCode).toBe(200);
         expect(body).toEqual({
           id: insertedIdJoe?.toString(),
-          firstName: 'Joe',
-          lastName: 'Biden',
-          email: 'biden.joe@euri.com',
-          role: 'user',
+          ...input,
+          password: undefined,
         });
       });
     });
@@ -135,6 +136,8 @@ describe('users', () => {
             role: 'admin',
           });
       }
+
+      expect(() => guardAgainstInvalidUser({})).toThrowError(BadRequest);
       await expect(putRequest()).rejects.toThrowError(BadRequest);
     });
 
@@ -302,14 +305,15 @@ describe('users', () => {
         email: 'barack.obama@euri.com',
         password: 'Kcarab',
       });
-      const { refreshToken } = result.body;
       expect(result.statusCode).toBe(200);
 
-      const { statusCode } = await supertest(app).delete('/api/logout').send({ refreshToken });
+      const email = 'barack.obama@euri.com';
+
+      const { statusCode } = await supertest(app).delete('/api/logout').send({ email });
 
       expect(statusCode).toBe(204);
 
-      const token = await collections.tokens?.findOne({ refreshToken });
+      const token = await collections.tokens?.findOne({ email });
       expect(token).toBeNull();
     });
   });
