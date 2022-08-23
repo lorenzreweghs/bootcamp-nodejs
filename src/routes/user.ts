@@ -2,6 +2,7 @@
 import bcrypt from 'bcrypt';
 import express, { Handler } from 'express';
 import { ObjectId } from 'mongodb';
+import { authenticateToken } from '../middleware/auth';
 import { collections } from '../services/database.service';
 import ajv from '../utils/ajv';
 import { BadRequest } from '../utils/httpError';
@@ -71,7 +72,7 @@ userRouter
       res.status(500).send(error.message);
     }
   })
-  .put(async (_req, res) => {
+  .put(authenticateToken, async (_req, res) => {
     guardAgainstInvalidUser(_req.body);
     const { id } = _req.params;
     const { firstName, lastName, email, password, role } = _req.body;
@@ -97,7 +98,7 @@ userRouter
       }
     });
   })
-  .delete(async (_req, res) => {
+  .delete(authenticateToken, async (_req, res) => {
     const { id } = _req.params;
 
     try {
@@ -108,5 +109,27 @@ userRouter
       res.status(500).send(error.message);
     }
   });
+
+userRouter.post('/users/resetPassword', async (_req, res) => {
+  const { email } = _req.body;
+
+  if (!email) return res.sendStatus(400);
+
+  const user = await collections.users?.findOne({ email });
+
+  if (!user) return res.sendStatus(404);
+
+  bcrypt.hash('Default', 10, async (err, hashedPassword) => {
+    if (err) return res.sendStatus(500);
+
+    try {
+      await collections.users?.updateOne({ email }, { $set: { password: hashedPassword } });
+
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(403).send(error.message);
+    }
+  });
+});
 
 export default userRouter;
