@@ -17,26 +17,21 @@ export function guardAgainstInvalidUser(body: unknown): asserts body is UserRequ
 
 export const registerHandler: Handler = (_req, res, next) => {
   guardAgainstInvalidUser(_req.body);
-  const { firstName, lastName, email, password, role } = _req.body;
+  const { password } = _req.body;
 
   bcrypt.hash(password, 10, async (err, hashedPassword) => {
     if (err) return res.sendStatus(500);
 
     try {
       const result = await collections.users?.insertOne({
-        firstName,
-        lastName,
-        email,
+        ..._req.body,
         password: hashedPassword,
-        role,
       });
 
       res.status(201).json({
         id: result?.insertedId,
-        firstName,
-        lastName,
-        email,
-        role,
+        ..._req.body,
+        password: undefined,
       });
     } catch (error) {
       res.sendStatus(403);
@@ -75,7 +70,7 @@ userRouter
   .put(authenticateToken, async (_req, res) => {
     guardAgainstInvalidUser(_req.body);
     const { id } = _req.params;
-    const { firstName, lastName, email, password, role } = _req.body;
+    const { password } = _req.body;
 
     bcrypt.hash(password, 10, async (err, hashedPassword) => {
       if (err) return res.sendStatus(500);
@@ -83,15 +78,13 @@ userRouter
       try {
         await collections.users?.updateOne(
           { _id: new ObjectId(id) },
-          { $set: { firstName, lastName, email, password: hashedPassword, role } },
+          { $set: { ..._req.body, password: hashedPassword } },
         );
 
         res.status(200).json({
           id,
-          firstName,
-          lastName,
-          email,
-          role,
+          ..._req.body,
+          password: undefined,
         });
       } catch (error: any) {
         res.status(403).send(error.message);
