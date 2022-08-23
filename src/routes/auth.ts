@@ -4,9 +4,10 @@ import bcrypt from 'bcrypt';
 import 'dotenv/config';
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import { ObjectId } from 'mongodb';
 import User from '../models/user';
 import { collections } from '../services/database.service';
-import { UserResponseBody } from './resources';
+import { TokenBody, UserResponseBody } from './resources';
 
 const authRouter = express.Router();
 
@@ -84,21 +85,26 @@ authRouter.post('/token', async (_req, res) => {
 });
 
 authRouter.delete('/logout', async (_req, res) => {
-  const { refreshToken } = _req.body;
+  const { email } = _req.body;
 
-  if (!refreshToken) return res.sendStatus(400);
+  if (!email) return res.sendStatus(400);
 
-  const allTokens = await collections.tokens?.find({}).toArray();
+  const user = await collections.users?.findOne<User>({ email });
+  const userResource = mapToResource(user!);
 
-  let tokenExists = false;
+  const allTokens = await collections.tokens?.find<TokenBody>({}).toArray();
+
+  let tokenMatch = '';
   allTokens?.forEach((token) => {
-    if (token.refreshToken === refreshToken) tokenExists = true;
+    if (new ObjectId(userResource.id).equals(token.user_id)) {
+      tokenMatch = token.refreshToken;
+    }
   });
 
-  if (!tokenExists) return res.sendStatus(403);
+  if (!tokenMatch) return res.sendStatus(403);
 
   try {
-    await collections.tokens?.deleteOne({ refreshToken });
+    await collections.tokens?.deleteOne({ tokenMatch });
     res.sendStatus(204);
   } catch (error: any) {
     res.status(400).send(error.message);
