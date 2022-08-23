@@ -22,7 +22,7 @@ const mapToResource: (user: User) => UserResponseBody = ({ _id, firstName, lastN
   return resource;
 };
 
-const generateAccessToken = (user: { email: string; password: string }) =>
+export const generateAccessToken = (user: { email: string; password: string }) =>
   jwt.sign(user, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: '15m' });
 
 authRouter.post('/login', async (_req, res) => {
@@ -86,7 +86,7 @@ authRouter.post('/token', async (_req, res) => {
 authRouter.delete('/logout', async (_req, res) => {
   const { refreshToken } = _req.body;
 
-  if (!refreshToken) return res.sendStatus(401);
+  if (!refreshToken) return res.sendStatus(400);
 
   const allTokens = await collections.tokens?.find({}).toArray();
 
