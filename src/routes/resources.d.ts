@@ -18,6 +18,19 @@ export interface UserResponseBody extends UserRequestBody {
   password?: string;
 }
 
+export interface ProductRequestBody {
+  name: string;
+  description: string;
+  price: number;
+  discount: number;
+  category: string;
+  stock: number;
+}
+
+export interface ProductResponseBody extends ProductRequestBody {
+  id: string;
+}
+
 export interface TokenBody {
   id: string;
   user_id: string;
