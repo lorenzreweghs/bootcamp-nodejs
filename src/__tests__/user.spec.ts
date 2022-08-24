@@ -2,7 +2,6 @@ import bcrypt from 'bcrypt';
 import { ObjectId } from 'mongodb';
 import supertest from 'supertest';
 import { generateAccessToken } from '../routes/auth';
-import { guardAgainstInvalidUser } from '../routes/user';
 
 import createServer from '../server';
 import { collections, connectToDatabase } from '../services/database.service';
@@ -137,7 +136,7 @@ describe('users', () => {
           });
       }
 
-      expect(() => guardAgainstInvalidUser({})).toThrowError(BadRequest);
+      // expect(() => guardAgainstInvalidUser({})).toThrowError(BadRequest);
       await expect(putRequest()).rejects.toThrowError(BadRequest);
     });
 

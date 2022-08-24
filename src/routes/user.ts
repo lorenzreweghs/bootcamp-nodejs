@@ -11,55 +11,50 @@ import { UserRequestBody } from './resources';
 
 const userRouter = express.Router();
 
-export function guardAgainstInvalidUser(body: unknown): asserts body is UserRequestBody {
+function guardAgainstInvalidUser(body: unknown): asserts body is UserRequestBody {
   if (!validateUser(body)) throw new BadRequest(ajv.errorsText(validateUser.errors, { dataVar: 'body' }));
 }
 
 export const registerHandler: Handler = (_req, res, next) => {
   guardAgainstInvalidUser(_req.body);
-  const { firstName, lastName, email, password, role } = _req.body;
+  const { password } = _req.body;
 
   bcrypt.hash(password, 10, async (err, hashedPassword) => {
     if (err) return res.sendStatus(500);
 
     try {
       const result = await collections.users?.insertOne({
-        firstName,
-        lastName,
-        email,
+        ..._req.body,
         password: hashedPassword,
-        role,
       });
 
       res.status(201).json({
+        ..._req.body,
         id: result?.insertedId,
-        firstName,
-        lastName,
-        email,
-        role,
+        password: undefined,
       });
     } catch (error) {
-      res.sendStatus(403);
+      next(error);
     }
   });
 };
 
 userRouter
   .route('/users')
-  .get(async (_req, res) => {
+  .get(async (_req, res, next) => {
     try {
       const users = await collections.users?.find({}).toArray();
 
       res.status(200).send(users);
-    } catch (error: any) {
-      res.status(500).send(error.message);
+    } catch (error) {
+      next(error);
     }
   })
   .post((_req, res, next) => registerHandler(_req, res, next));
 
 userRouter
   .route('/users/:id')
-  .get(async (_req, res) => {
+  .get(async (_req, res, next) => {
     const { id } = _req.params;
 
     try {
@@ -68,49 +63,51 @@ userRouter
       if (!user) return res.sendStatus(404);
 
       res.status(200).send(user);
-    } catch (error: any) {
-      res.status(500).send(error.message);
+    } catch (error) {
+      next(error);
     }
   })
-  .put(authenticateToken, async (_req, res) => {
+  .put(authenticateToken, async (_req, res, next) => {
     guardAgainstInvalidUser(_req.body);
     const { id } = _req.params;
-    const { firstName, lastName, email, password, role } = _req.body;
+    const { password } = _req.body;
 
     bcrypt.hash(password, 10, async (err, hashedPassword) => {
       if (err) return res.sendStatus(500);
 
       try {
-        await collections.users?.updateOne(
+        const result = await collections.users?.updateOne(
           { _id: new ObjectId(id) },
-          { $set: { firstName, lastName, email, password: hashedPassword, role } },
+          { $set: { ..._req.body, password: hashedPassword } },
         );
 
+        if (!result?.modifiedCount) return res.sendStatus(404);
+
         res.status(200).json({
+          ..._req.body,
           id,
-          firstName,
-          lastName,
-          email,
-          role,
+          password: undefined,
         });
-      } catch (error: any) {
-        res.status(403).send(error.message);
+      } catch (error) {
+        next(error);
       }
     });
   })
-  .delete(authenticateToken, async (_req, res) => {
+  .delete(authenticateToken, async (_req, res, next) => {
     const { id } = _req.params;
 
     try {
-      await collections.users?.deleteOne({ _id: new ObjectId(id) });
+      const result = await collections.users?.deleteOne({ _id: new ObjectId(id) });
+
+      if (!result?.deletedCount) return res.sendStatus(404);
 
       res.status(200).send(`User with ID ${id} deleted`);
-    } catch (error: any) {
-      res.status(500).send(error.message);
+    } catch (error) {
+      next(error);
     }
   });
 
-userRouter.post('/users/resetPassword', async (_req, res) => {
+userRouter.post('/users/resetPassword', async (_req, res, next) => {
   const { email } = _req.body;
 
   if (!email) return res.sendStatus(400);
@@ -126,8 +123,8 @@ userRouter.post('/users/resetPassword', async (_req, res) => {
       await collections.users?.updateOne({ email }, { $set: { password: hashedPassword } });
 
       res.sendStatus(204);
-    } catch (error: any) {
-      res.status(403).send(error.message);
+    } catch (error) {
+      next(error);
     }
   });
 });
