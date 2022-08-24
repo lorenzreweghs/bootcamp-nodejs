@@ -4,8 +4,16 @@ import { ObjectId } from 'mongodb';
 import { authenticateToken } from '../middleware/auth';
 import Product from '../models/product';
 import { collections } from '../services/database.service';
+import ajv from '../utils/ajv';
+import { BadRequest } from '../utils/httpError';
+import { validateProduct } from '../validation/validators';
+import { ProductRequestBody } from './resources';
 
 const productRouter = express.Router();
+
+function guardAgainstInvalidProduct(body: unknown): asserts body is ProductRequestBody {
+  if (!validateProduct(body)) throw new BadRequest(ajv.errorsText(validateProduct.errors, { dataVar: 'body' }));
+}
 
 productRouter
   .route('/products')
@@ -19,6 +27,8 @@ productRouter
     }
   })
   .post(authenticateToken, async (_req, res, next) => {
+    guardAgainstInvalidProduct(_req.body);
+
     try {
       const result = await collections.products?.insertOne({ ..._req.body });
 
@@ -47,6 +57,7 @@ productRouter
     }
   })
   .put(authenticateToken, async (_req, res, next) => {
+    guardAgainstInvalidProduct(_req.body);
     const { id } = _req.params;
 
     try {
