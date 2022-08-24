@@ -11,7 +11,7 @@ import { UserRequestBody } from './resources';
 
 const userRouter = express.Router();
 
-export function guardAgainstInvalidUser(body: unknown): asserts body is UserRequestBody {
+function guardAgainstInvalidUser(body: unknown): asserts body is UserRequestBody {
   if (!validateUser(body)) throw new BadRequest(ajv.errorsText(validateUser.errors, { dataVar: 'body' }));
 }
 
