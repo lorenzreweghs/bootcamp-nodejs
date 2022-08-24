@@ -93,7 +93,7 @@ describe('users', () => {
             'Authorization',
             `Bearer ${generateAccessToken({
               email: 'lorenz.reweghs@euri.com',
-              password: 'Znerol',
+              role: 'user',
             })}`,
           )
           .send(input);
@@ -125,7 +125,7 @@ describe('users', () => {
             'Authorization',
             `Bearer ${generateAccessToken({
               email: 'lorenz.reweghs@euri.com',
-              password: 'Znerol',
+              role: 'user',
             })}`,
           )
           .send({
@@ -148,7 +148,7 @@ describe('users', () => {
             'Authorization',
             `Bearer ${generateAccessToken({
               email: 'lorenz.reweghs@euri.com',
-              password: 'Znerol',
+              role: 'user',
             })}`,
           )
           .send({
@@ -169,7 +169,7 @@ describe('users', () => {
             'Authorization',
             `Bearer ${generateAccessToken({
               email: 'lorenz.reweghs@euri.com',
-              password: 'Znerol',
+              role: 'user',
             })}`,
           )
           .send({
@@ -364,6 +364,77 @@ describe('users', () => {
       const { statusCode } = await supertest(app).post('/api/users/resetPassword');
 
       expect(statusCode).toBe(400);
+    });
+  });
+
+  describe('given a user deletes a user with a valid ID, token & role', () => {
+    it('should return statusCode 200', async () => {
+      const { statusCode, text } = await supertest(app)
+        .delete(`/api/users/${insertedIdJoe}`)
+        .set(
+          'Authorization',
+          `Bearer ${generateAccessToken({
+            email: 'lorenz.reweghs@euri.com',
+            role: 'admin',
+          })}`,
+        );
+
+      expect(statusCode).toBe(200);
+      expect(text).toEqual(`User with ID ${insertedIdJoe?.toString()} deleted`);
+    });
+  });
+
+  describe('given the user deletes a product with a user role', () => {
+    it('should return statusCode 401', async () => {
+      const { statusCode, text } = await supertest(app)
+        .delete(`/api/users/${insertedIdJoe}`)
+        .set(
+          'Authorization',
+          `Bearer ${generateAccessToken({
+            email: 'lorenz.reweghs@euri.com',
+            role: 'user',
+          })}`,
+        );
+
+      expect(statusCode).toBe(401);
+      expect(text).toEqual('Unauthorized');
+    });
+  });
+
+  describe('given the user deletes a product without a valid ID', () => {
+    it('should return statusCode 404', async () => {
+      const { statusCode, text } = await supertest(app)
+        .delete(`/api/users/${new ObjectId(123)}`)
+        .set(
+          'Authorization',
+          `Bearer ${generateAccessToken({
+            email: 'lorenz.reweghs@euri.com',
+            role: 'admin',
+          })}`,
+        );
+
+      expect(statusCode).toBe(404);
+      expect(text).toEqual('Not Found');
+    });
+  });
+
+  describe('given the user deletes a product without a valid accessToken', () => {
+    it('should return statusCode 403', async () => {
+      const { statusCode, text } = await supertest(app)
+        .delete(`/api/users/${insertedIdJoe}`)
+        .set('Authorization', 'Bearer 12345');
+
+      expect(statusCode).toBe(403);
+      expect(text).toEqual('Forbidden');
+    });
+  });
+
+  describe('given the user deletes a product without an accessToken', () => {
+    it('should return statusCode 401', async () => {
+      const { statusCode, text } = await supertest(app).delete(`/api/users/${insertedIdJoe}`);
+
+      expect(statusCode).toBe(401);
+      expect(text).toEqual('Unauthorized');
     });
   });
 });

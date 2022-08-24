@@ -96,6 +96,8 @@ userRouter
   .delete(authenticateToken, async (_req, res, next) => {
     const { id } = _req.params;
 
+    if (_req.user?.role !== 'admin') return res.sendStatus(401);
+
     try {
       const result = await collections.users?.deleteOne({ _id: new ObjectId(id) });
 
