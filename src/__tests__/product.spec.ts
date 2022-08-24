@@ -122,7 +122,7 @@ describe('products', () => {
             'Authorization',
             `Bearer ${generateAccessToken({
               email: 'lorenz.reweghs@euri.com',
-              password: 'Znerol',
+              role: 'user',
             })}`,
           )
           .send(orangeInput);
@@ -169,7 +169,7 @@ describe('products', () => {
             'Authorization',
             `Bearer ${generateAccessToken({
               email: 'lorenz.reweghs@euri.com',
-              password: 'Znerol',
+              role: 'user',
             })}`,
           )
           .send({ ...pearDoc, _id: undefined, price: 5.0, discount: 2.0 });
@@ -187,7 +187,7 @@ describe('products', () => {
             'Authorization',
             `Bearer ${generateAccessToken({
               email: 'lorenz.reweghs@euri.com',
-              password: 'Znerol',
+              role: 'user',
             })}`,
           )
           .send({ ...pearDoc, _id: undefined, price: 5.0, discount: 2.0 });
@@ -224,7 +224,7 @@ describe('products', () => {
   });
 
   describe('DELETE product', () => {
-    describe('given the user deletes a product with a valid ID & token', () => {
+    describe('given the user deletes a product with a valid ID, token & admin role', () => {
       it('should return statusCode 200', async () => {
         const { statusCode, text } = await supertest(app)
           .delete(`/api/products/${bananaObjectId}`)
@@ -232,12 +232,29 @@ describe('products', () => {
             'Authorization',
             `Bearer ${generateAccessToken({
               email: 'lorenz.reweghs@euri.com',
-              password: 'Znerol',
+              role: 'admin',
             })}`,
           );
 
         expect(statusCode).toBe(200);
         expect(text).toEqual(`Product with ID ${bananaObjectId.toString()} deleted`);
+      });
+    });
+
+    describe('given the user deletes a product with a user role', () => {
+      it('should return statusCode 401', async () => {
+        const { statusCode, text } = await supertest(app)
+          .delete(`/api/products/${bananaObjectId}`)
+          .set(
+            'Authorization',
+            `Bearer ${generateAccessToken({
+              email: 'lorenz.reweghs@euri.com',
+              role: 'user',
+            })}`,
+          );
+
+        expect(statusCode).toBe(401);
+        expect(text).toEqual('Unauthorized');
       });
     });
 
@@ -249,7 +266,7 @@ describe('products', () => {
             'Authorization',
             `Bearer ${generateAccessToken({
               email: 'lorenz.reweghs@euri.com',
-              password: 'Znerol',
+              role: 'admin',
             })}`,
           );
 
