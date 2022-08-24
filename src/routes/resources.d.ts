@@ -1,3 +1,5 @@
+import User from '../models/user';
+
 export interface UserRequestBody {
   firstName: string;
   lastName: string;
@@ -35,4 +37,12 @@ export interface TokenBody {
   id: string;
   user_id: string;
   refreshToken: string;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
 }

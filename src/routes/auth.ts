@@ -23,7 +23,7 @@ const mapToResource: (user: User) => UserResponseBody = ({ _id, firstName, lastN
   return resource;
 };
 
-export const generateAccessToken = (user: { email: string; password: string }) =>
+export const generateAccessToken = (user: { email: string; role: string }) =>
   jwt.sign(user, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: '15m' });
 
 authRouter.post('/login', async (_req, res) => {
@@ -31,15 +31,15 @@ authRouter.post('/login', async (_req, res) => {
 
   if (!email || !password) return res.sendStatus(400);
 
-  const user = {
-    email,
-    password,
-  };
-
   const userDoc = await collections.users?.findOne<User>({ email }).catch((err: any) => {
     res.status(404).send(err.message);
   });
   if (!userDoc) return res.sendStatus(404);
+
+  const user = {
+    email,
+    role: userDoc.role,
+  };
 
   bcrypt.compare(password, userDoc.password, async (err, result) => {
     if (err) return res.sendStatus(500);
@@ -78,7 +78,7 @@ authRouter.post('/token', async (_req, res) => {
 
     const accessToken = generateAccessToken({
       email: user.email,
-      password: user.password,
+      role: user.role,
     });
     res.status(200).json({ accessToken });
   });
