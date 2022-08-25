@@ -10,5 +10,5 @@ const app = createServer();
 
 app.listen(PORT, async () => {
   await connectToDatabase().connect();
-  console.log(`Example app listening on port ${PORT}`);
+  console.log(`App listening on port ${PORT}`);
 });

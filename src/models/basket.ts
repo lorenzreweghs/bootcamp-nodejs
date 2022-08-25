@@ -1,5 +1,4 @@
-import { ObjectId } from 'mongodb';
-
+/* eslint-disable @typescript-eslint/lines-between-class-members */
 interface IBasket {
   items: [
     {
@@ -13,9 +12,29 @@ interface IBasket {
   ];
   discountCode: string;
   expireTime: Date;
-  id?: ObjectId;
+  _id: string;
 }
 
 export default class Basket {
-  constructor(public user: IBasket) {}
+  items: [
+    {
+      product: {
+        name: string;
+        price: number;
+        discount: number;
+      };
+      quantity: number;
+    },
+  ];
+  discountCode: string;
+  expireTime: Date;
+  _id: string;
+
+  constructor({ items, discountCode, expireTime, _id }: IBasket) {
+    this.items = items;
+    this.discountCode = discountCode;
+    this.expireTime = expireTime;
+    // eslint-disable-next-line no-underscore-dangle
+    this._id = _id;
+  }
 }
