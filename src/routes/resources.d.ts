@@ -33,6 +33,25 @@ export interface ProductResponseBody extends ProductRequestBody {
   id: string;
 }
 
+export interface BasketRequestBody {
+  items: [
+    {
+      product: {
+        name: string;
+        price: number;
+        discount: number;
+      };
+      quantity: number;
+    },
+  ];
+  discountCode: string;
+  expireTime: Date;
+}
+
+export interface BasketResponseBody extends BasketRequestBody {
+  id: string;
+}
+
 export interface TokenBody {
   id: string;
   user_id: string;
