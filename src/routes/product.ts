@@ -1,5 +1,5 @@
 /* eslint-disable consistent-return */
-import express from 'express';
+import express, { Request } from 'express';
 import { ObjectId } from 'mongodb';
 import { authenticateToken } from '../middleware/auth';
 import Product from '../models/product';
@@ -15,11 +15,27 @@ function guardAgainstInvalidProduct(body: unknown): asserts body is ProductReque
   if (!validateProduct(body)) throw new BadRequest(ajv.errorsText(validateProduct.errors, { dataVar: 'body' }));
 }
 
+interface Query {
+  page: number;
+  sort: string;
+  filter: string;
+}
+
 productRouter
   .route('/products')
-  .get(async (_req, res, next) => {
+  .get(async (_req: Request<unknown, unknown, unknown, Query>, res, next) => {
+    const queries = _req.query;
+
+    const queryObject = {
+      skip: Number(queries.page) ? (queries.page - 1) * 10 : undefined,
+      limit: 10,
+      sort: queries.sort,
+      filter: queries.filter,
+    };
+    console.log(queryObject);
+
     try {
-      const products = await collections.products?.find<Product[]>({}).toArray();
+      const products = await collections.products?.find<Product[]>({}, queryObject).toArray();
 
       res.status(200).send(products);
     } catch (error) {
